@@ -18,7 +18,8 @@ TOKEN      = ""
 
 GUAC_DROPLET_NAME      = "guacserver"
 CHALLENGE_DROPLET_BASE = "cdb"
-USER_BASE              = "potato"
+USERNAME_BASE          = "potato"
+USERNAME_NUMDIGITS     = 5
 
 
 
@@ -43,6 +44,16 @@ def genRandomNumber(length):
 
 
 
+users = []
+def getNewUsername():
+	username = USERNAME_BASE + genRandomNumber(USERNAME_NUMDIGITS)
+	while username in users:
+		username = USERNAME_BASE + genRandomNumber(USERNAME_NUMDIGITS)
+		# print("Reruning user generation due to: " + username)
+
+	users.append(username)
+	return username
+
 
 
 def confirmDestroy():
@@ -59,8 +70,6 @@ def confirmDestroy():
 		print("Please enter valid inputs you idiot")
 		print(error)
 		return confirmDestroy()
-
-
 
 
 
@@ -140,8 +149,9 @@ for droplet in my_droplets:
 
 	if CHALLENGE_DROPLET_BASE in droplet.name:
 		print (droplet.name + " has private ip: " + droplet.private_ip_address)
-		print("\n")
-		USERMAPPING += '\n 	<authorize username="' + USER_BASE + genRandomNumber(5) + '" password="' + genRandomString(14) +'">\n'
+		print("\n")	
+		username = getNewUsername()
+		USERMAPPING += '\n 	<authorize username="' + username + '" password="' + genRandomString(14) +'">\n'
 		USERMAPPING += '''		<protocol>vnc</protocol>
         	<param name="hostname">''' + droplet.private_ip_address + '</param>\n'
 		USERMAPPING += '''    		<param name="port">5901</param>
