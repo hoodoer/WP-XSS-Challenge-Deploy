@@ -3,7 +3,7 @@
 # Script to help deploy and destroy my XSS challenge network
 #
 # Drew Kirkpatrick
-# drew.kirapt-get install python-dev libsasl2-dev gcckpatrick@gmail.com
+# drew.kirkpatrick@gmail.com
 # @hoodoer
 
 
@@ -12,7 +12,11 @@ import sys
 import digitalocean
 import random
 import string
+
 from past.builtins import xrange
+
+
+
 
 TOKEN      = ""
 
@@ -107,24 +111,22 @@ if args.mapusers:
 if args.destroy:
 	print("Oh boy, let's burn this shit down\n\n")
 	if confirmDestroy():
-		print("Confirmed, destroying the lab!")
+		print("Confirmed, destroying the lab!\n")
 
 		for droplet in my_droplets:
 			if droplet.name == GUAC_DROPLET_NAME:
 				print ("Destroying Guac Server...")
 				droplet.destroy()
-				print("\n")
 
 			if CHALLENGE_DROPLET_BASE in droplet.name:
 				print ("Destroying " + droplet.name + "...")
 				droplet.destroy()
-				print ("\n")
 
-		print("Lab is toast, don't forget to clean up DNS at some point")
+		print("Lab is toast, don't forget to clean up DNS and API key at")
 		exit()
 
 	else:
-		print("You sissy, destroy that network!")
+		print("Wimp")
 		exit()
 
 
@@ -140,6 +142,12 @@ USERMAPPING += '''		<protocol>vnc</protocol>
 
 '''
 
+challengeUsers      = []
+challengePasswords  = []
+challengeServers    = []
+challengePrivateIps = []
+
+challengeCsvData = []
 
 
 for droplet in my_droplets:
@@ -151,7 +159,8 @@ for droplet in my_droplets:
 		print (droplet.name + " has private ip: " + droplet.private_ip_address)
 		print("\n")	
 		username = getNewUsername()
-		USERMAPPING += '\n 	<authorize username="' + username + '" password="' + genRandomString(14) +'">\n'
+		password = genRandomString(14)
+		USERMAPPING += '\n 	<authorize username="' + username + '" password="' + password +'">\n'
 		USERMAPPING += '''		<protocol>vnc</protocol>
         	<param name="hostname">''' + droplet.private_ip_address + '</param>\n'
 		USERMAPPING += '''    		<param name="port">5901</param>
@@ -160,8 +169,19 @@ for droplet in my_droplets:
 
 		'''
 
+		csvEntry = username + "," + password + "," + droplet.name + "," + droplet.private_ip_address
+		challengeCsvData.append(csvEntry)
+
 
 USERMAPPING += "\n</user-mapping>\n"
 
 print("\n\n")
 print (USERMAPPING)
+
+print("\n\n")
+print("\n\n")
+print("CSV Data:")
+
+for line in challengeCsvData:
+	print(line)
+
