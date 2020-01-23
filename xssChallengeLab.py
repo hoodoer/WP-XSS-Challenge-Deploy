@@ -119,6 +119,10 @@ if counter > 1:
 
 
 # Don't need a digital ocean connection for this
+# Randomly generate users and password ahead of time,
+# and they can be distributed. Save this to a file, 
+# you can read it back in later at lab time to map
+# to droplets
 usersList     = []
 passwordsList = []
 if args.genuserlist:
@@ -134,6 +138,8 @@ if args.genuserlist:
 
 
 
+
+# For the rest of these, we need a digital ocean API connection
 print("Connecting to digital ocean to retrieve droplets...")
 manager      = digitalocean.Manager(token=TOKEN)
 my_droplets  = manager.get_all_droplets()
@@ -141,6 +147,13 @@ print("Done.\n\n")
 
 
 
+
+
+
+
+
+# Read in user and passwords from a pre-generated file,
+# then map these to droplets and create the guac user mapping file
 if args.mapuserlist:
 	print("Reading in user list from file: " + args.mapuserlist)
 	fileHandle = open(args.mapuserlist, "r")
@@ -161,8 +174,14 @@ if args.mapuserlist:
 		print(str(count) + ", " + usersList[count] + ", " + passwordsList[count])
 
 
-	# Ok, now need to pull droplets and do the mapping like the original mapping
+	# Ok, now need to pull droplets and do the mapping like the original func
+	# And create the guac config
 	exit()
+
+
+
+
+
 
 
 if args.destroy:
@@ -185,6 +204,9 @@ if args.destroy:
 	else:
 		print("Wimp")
 		exit()
+
+
+
 
 
 
