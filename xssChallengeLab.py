@@ -79,21 +79,57 @@ def confirmDestroy():
 
 
 
+
+
+
 parser = argparse.ArgumentParser()
-parser.add_argument("--mapusers", help="Map users to challenge droplets, generate guac user mapping file", action="store_true")
+parser.add_argument("--mapusers", help="Generate and map users to challenge droplets, generate guac user mapping file", action="store_true")
+parser.add_argument("--genuserlist", type=int, help="Pre-generate a user/password list for distribution. Requires number to generate")
+parser.add_argument("--mapuserlist", help="Map existing user/password list to droplets, generate guac user mapping file. Requires filename with user/password list")
 parser.add_argument("--destroy", help="Destroy the challenge lab", action="store_true")
 
 args = parser.parse_args()
 
 
 if len(sys.argv) < 2:
+	print("\nNeed at least one action\n")
+	parser.print_help()
+	exit()
+
+counter = 0
+
+if args.mapusers:
+	counter += 1
+
+if args.genuserlist:
+	counter += 1
+
+if args.mapuserlist:
+	counter += 1
+
+if args.destroy:
+	counter += 1
+
+if counter > 1:
+	print("\nToo many arguments, only one action at a time please\n")
 	parser.print_help()
 	exit()
 
 
-if args.mapusers and args.destroy:
-	print("You cannot mapusers and destroy the lab at the same time idiot")
-	parser.print_help()
+
+
+# Don't need a digital ocean connection for this
+usersList     = []
+passwordsList = []
+if args.genuserlist:
+	numUsers = args.genuserlist
+
+	for x in range(numUsers):
+		usersList.append(getNewUsername())
+		passwordsList.append(genRandomString(14))
+
+	for count in range(len(users)):
+		print(str(count) + ", " + usersList[count] + ", " + passwordsList[count])
 	exit()
 
 
@@ -103,6 +139,20 @@ manager      = digitalocean.Manager(token=TOKEN)
 my_droplets  = manager.get_all_droplets()
 print("Done.\n\n")
 
+
+
+if args.mapuserlist:
+	print("Reading in user list from file: " + args.mapuserlist)
+	fileHandle = open(args.mapuserlist, "r")
+	usersFileRows = fileHandle.readlines()
+	fileHandle.close()
+
+	print(usersFileRows)
+	lineCounter = 0
+	for line in usersFileRows:
+		print("Line: " + str(lineCounter) + ", line: " + line)
+		lineCounter += 1
+	exit()
 
 
 if args.mapusers:
@@ -171,6 +221,13 @@ for droplet in my_droplets:
 
 		csvEntry = username + "," + password + "," + droplet.name + "," + droplet.private_ip_address
 		challengeCsvData.append(csvEntry)
+
+
+		# challengeUsers.append(username)
+		# challengePasswords.append(password)
+		# challengeServers.append(droplet.name)
+		# challengePrivateIps.append(droplet.private_ip_address)
+
 
 
 USERMAPPING += "\n</user-mapping>\n"
