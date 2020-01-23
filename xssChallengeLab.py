@@ -147,16 +147,23 @@ if args.mapuserlist:
 	usersFileRows = fileHandle.readlines()
 	fileHandle.close()
 
-	print(usersFileRows)
+	#print(usersFileRows)
 	lineCounter = 0
 	for line in usersFileRows:
-		print("Line: " + str(lineCounter) + ", line: " + line)
-		lineCounter += 1
+		data = line.split(", ")
+		usersList.append(data[1])
+		passwordsList.append(data[2])
+		# print("Line: " + str(lineCounter) + ", line: " + line)
+		# lineCounter += 1
+
+
+	for count in range(len(usersList)):
+		print(str(count) + ", " + usersList[count] + ", " + passwordsList[count])
+
+
+	# Ok, now need to pull droplets and do the mapping like the original mapping
 	exit()
 
-
-if args.mapusers:
-	print("Mapping users to droplets...\n")
 
 if args.destroy:
 	print("Oh boy, let's burn this shit down\n\n")
@@ -179,6 +186,11 @@ if args.destroy:
 		print("Wimp")
 		exit()
 
+
+
+# And the rest...
+if args.mapusers:
+	print("Mapping users to droplets...\n")
 
 
 
