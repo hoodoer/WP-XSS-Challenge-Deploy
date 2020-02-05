@@ -1,9 +1,12 @@
 #!/usr/bin/python3
 
-# Script to help deploy and destroy my XSS challenge network
+# Script to help deploy and destroy my XSS challenge/workshop network
+# 
+# Workshop uses full desktop linux boxes that have tools (burp, firefox, vulnerable app)
+# Each participant gets there own VPS/Desktop. 
+# A separate Apache Guacamole server acts as the remote desktop gateway (web based)
 #
 # Drew Kirkpatrick
-# drew.kirkpatrick@gmail.com
 # @hoodoer
 
 
@@ -24,8 +27,11 @@ GUAC_DROPLET_NAME      = "guacserver"
 CHALLENGE_DROPLET_BASE = "cdb"
 USERNAME_BASE          = "potato"
 USERNAME_NUMDIGITS     = 5
+PASSWORD_LENGTH        = 14
 
 
+usersList     = []
+passwordsList = []
 
 
 
@@ -35,7 +41,7 @@ def genRandomString(length):
     password_charset = string.ascii_letters + string.digits + "?!@$%^*"
 
     if not hasattr(genRandomString, "rng"):
-        genRandomString.rng = random.SystemRandom() # Create a static variable
+        genRandomString.rng = random.SystemRandom() 
     return ''.join([ genRandomString.rng.choice(password_charset) for _ in xrange(length) ])
 
 
@@ -43,7 +49,7 @@ def genRandomNumber(length):
 	charset = string.digits
 
 	if not hasattr(genRandomNumber, "rng"):
-		genRandomNumber.rng = random.SystemRandom() # Create a static variable
+		genRandomNumber.rng = random.SystemRandom() 
 	return ''.join([ genRandomNumber.rng.choice(charset) for _ in xrange(length) ])
 
 
@@ -123,14 +129,12 @@ if counter > 1:
 # and they can be distributed. Save this to a file, 
 # you can read it back in later at lab time to map
 # to droplets
-usersList     = []
-passwordsList = []
 if args.genuserlist:
 	numUsers = args.genuserlist
 
 	for x in range(numUsers):
 		usersList.append(getNewUsername())
-		passwordsList.append(genRandomString(14))
+		passwordsList.append(genRandomString(PASSWORD_LENGTH))
 
 	for count in range(len(users)):
 		print(str(count) + ", " + usersList[count] + ", " + passwordsList[count])
@@ -156,27 +160,20 @@ print("Done.\n\n")
 # then map these to droplets and create the guac user mapping file
 if args.mapuserlist:
 	print("Reading in user list from file: " + args.mapuserlist)
-	fileHandle = open(args.mapuserlist, "r")
+	
+	fileHandle    = open(args.mapuserlist, "r")
 	usersFileRows = fileHandle.readlines()
 	fileHandle.close()
 
-	#print(usersFileRows)
-	lineCounter = 0
 	for line in usersFileRows:
 		data = line.split(", ")
 		usersList.append(data[1])
-		passwordsList.append(data[2])
-		# print("Line: " + str(lineCounter) + ", line: " + line)
-		# lineCounter += 1
-
+		passwordsList.append(data[2].rstrip('\n'))
 
 	for count in range(len(usersList)):
 		print(str(count) + ", " + usersList[count] + ", " + passwordsList[count])
 
-
-	# Ok, now need to pull droplets and do the mapping like the original func
-	# And create the guac config
-	exit()
+	print()
 
 
 
@@ -198,7 +195,7 @@ if args.destroy:
 				print ("Destroying " + droplet.name + "...")
 				droplet.destroy()
 
-		print("Lab is toast, don't forget to clean up DNS and API key at")
+		print("Lab is toast, don't forget to clean up DNS and API key")
 		exit()
 
 	else:
@@ -210,14 +207,31 @@ if args.destroy:
 
 
 
-# And the rest...
+# Generate the users and passwords right now for the droplets
 if args.mapusers:
 	print("Mapping users to droplets...\n")
 
+	challengeBoxCounter = 0
+	for droplet in my_droplets:
+		if CHALLENGE_DROPLET_BASE in droplet.name:
+			challengeBoxCounter += 1
+	print("We have " + str(challengeBoxCounter) + " challenge boxes to deal with\n")
+	print("Users:")
 
+	numUsers = challengeBoxCounter
 
+	for x in range(numUsers):
+		usersList.append(getNewUsername())
+		passwordsList.append(genRandomString(PASSWORD_LENGTH))
+
+	for count in range(len(users)):
+		print(str(count) + ", " + usersList[count] + ", " + passwordsList[count])
+
+	print()
+
+# Let's build the Guacamole user-mapping configuration file
 USERMAPPING = "<user-mapping>\n"
-USERMAPPING += '	<authorize username="drew" password="' + genRandomString(14) +'">\n'
+USERMAPPING += '	<authorize username="drew" password="' + genRandomString(PASSWORD_LENGTH) +'">\n'
 USERMAPPING += '''		<protocol>vnc</protocol>
         	<param name="hostname">10.130.126.197</param>
         	<param name="port">5901</param>
@@ -226,24 +240,20 @@ USERMAPPING += '''		<protocol>vnc</protocol>
 
 '''
 
-challengeUsers      = []
-challengePasswords  = []
-challengeServers    = []
-challengePrivateIps = []
-
 challengeCsvData = []
 
+userIndex = 0
 
 for droplet in my_droplets:
 	if droplet.name == GUAC_DROPLET_NAME:
 		print ("Guac Server private ip: " + droplet.private_ip_address)
-		print("\n")
 
 	if CHALLENGE_DROPLET_BASE in droplet.name:
 		print (droplet.name + " has private ip: " + droplet.private_ip_address)
-		print("\n")	
-		username = getNewUsername()
-		password = genRandomString(14)
+		username   = usersList[userIndex]
+		password   = passwordsList[userIndex]
+		userIndex += 1
+
 		USERMAPPING += '\n 	<authorize username="' + username + '" password="' + password +'">\n'
 		USERMAPPING += '''		<protocol>vnc</protocol>
         	<param name="hostname">''' + droplet.private_ip_address + '</param>\n'
@@ -257,22 +267,15 @@ for droplet in my_droplets:
 		challengeCsvData.append(csvEntry)
 
 
-		# challengeUsers.append(username)
-		# challengePasswords.append(password)
-		# challengeServers.append(droplet.name)
-		# challengePrivateIps.append(droplet.private_ip_address)
-
-
 
 USERMAPPING += "\n</user-mapping>\n"
 
 print("\n\n")
+print("Guacamole user mapping configuration:")
 print (USERMAPPING)
 
-print("\n\n")
 print("\n\n")
 print("CSV Data:")
 
 for line in challengeCsvData:
 	print(line)
-
