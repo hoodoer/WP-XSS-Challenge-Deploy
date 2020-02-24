@@ -22,7 +22,7 @@ from past.builtins import xrange
 
 
 # Digital Ocean API token
-TOKEN      = ""
+TOKEN = ""
 
 GUAC_DROPLET_NAME      = "guacserver"
 CHALLENGE_DROPLET_BASE = "cdb"
@@ -187,9 +187,18 @@ if args.mapuserlist:
 
 
 if args.destroy:
-	print("Oh boy, let's burn this shit down\n\n")
+	print("Oh boy, let's burn this shit down. About to destroy droplets:")
+
+	for droplet in my_droplets:
+		if (droplet.name == GUAC_DROPLET_NAME):
+			print(droplet.name)
+
+		if CHALLENGE_DROPLET_BASE in droplet.name:
+			print(droplet.name)
+	print("\n")
+
 	if confirmDestroy():
-		print("Confirmed, destroying the lab!\n")
+		print("Confirmed, destroying these droplets!\n")
 
 		for droplet in my_droplets:
 			if droplet.name == GUAC_DROPLET_NAME:
@@ -200,7 +209,7 @@ if args.destroy:
 				print ("Destroying " + droplet.name + "...")
 				droplet.destroy()
 
-		print("Lab is toast, don't forget to clean up DNS and API key")
+		print("They be gone. Don't forget to clean up DNS and API key if appropriate.")
 		exit()
 
 	else:
